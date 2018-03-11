@@ -9,30 +9,44 @@ use strict;
 use warnings;
 
 my $response    = zenity_menu();
-
-if ($response eq 'welcome') {
-    welcome();
-}
+do_send($response);
 
 exit;
 
-sub welcome {
-    my $email_address = zenity_text("Enter email address");
+sub do_send {
+    my $type = shift;
+
+    my $config_ref      = load_yaml("$type/config.yml");
+    my $email_address   = zenity_text("Enter email address");
 
     use File::Slurp;
-    my $text = read_file('welcome/email.markdown');
+    my $text            = read_file("$type/email.markdown");
 
     use Text::Markdown::Hoedown;
-    my $html = markdown($text);
+    my $html            = markdown($text);
 
     use Email::Stuffer;
-    Email::Stuffer  ->to($email_address)
-                    ->from('chrisjrob@gmail.com')
-                    ->subject('Welcome to Guildford Art Society')
-                    ->html_body($html)
-                    ->attach_file('welcome/attachments/test.pdf')
-                    ->send;
+    my $email = Email::Stuffer  ->to($email_address)
+                                ->from($config_ref->{from})
+                                ->subject($config_ref->{subject})
+                                ->html_body($html);
 
+    my @files = glob("$type/attachments/*");
+    foreach my $filename (@files) {
+        $email->attach_file($filename);
+    }
+
+    $email->send;
+}
+
+sub load_yaml {
+    my $filename = shift;
+
+    use YAML;
+    my $config      = read_file($filename);
+    my $config_ref  = Load($config);
+
+    return $config_ref;
 }
 
 sub zenity_text {
