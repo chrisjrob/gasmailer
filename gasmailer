@@ -16,6 +16,8 @@ exit;
 sub do_send {
     my $type = shift;
 
+    return unless -d $type;
+
     my $config_ref      = load_yaml("$type/config.yml");
     my $email_address   = zenity_text("Enter email address");
 
@@ -60,6 +62,7 @@ sub zenity_text {
 
 sub zenity_menu {
 
+    # fixme: dynamically create options from directories and configs
     my $response = `zenity  --list --title "GAS Mailer" --text "Select an option" --radiolist  --column "Pick" --column "Option" TRUE "Send email to new member"`;
 
     chomp($response);
