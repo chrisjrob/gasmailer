@@ -1,0 +1,60 @@
+#!/usr/bin/perl
+#
+# gasmailer
+#
+# Simple script for sending personalised emails
+#
+
+use strict;
+use warnings;
+use emailfunc qw(:ALL);
+
+my $response    = zenity_menu();
+
+if ($response eq 'welcome') {
+    welcome();
+}
+
+exit;
+
+sub welcome {
+    my $email_address = zenity_text("Enter email address");
+
+    my $html;
+    my $text;
+
+    my $email = {
+        From    => 'chrisjrob@gmail.com',
+        To      => $email_address,
+        Subject => 'Welcome to Guildford Art Society',
+        HTML    => $html,
+        Plain   => $text,
+    };
+
+    my $response = post_html_email($email);
+
+}
+
+sub zenity_text {
+    my $prompt = shift;
+
+    my $response = `zenity --title "GAS Mailer" --entry --text "$prompt"`; 
+    chomp($response);
+
+    return $response;
+}
+
+sub zenity_menu {
+
+    my $response = `zenity  --list --title "GAS Mailer" --text "Select an option" --radiolist  --column "Pick" --column "Option" TRUE "Send email to new member"`;
+
+    chomp($response);
+
+    if ($response eq 'Send email to new member') {
+        return 'welcome';
+    } else {
+        print "Unexpect: $response\n";
+    }
+
+
+}
