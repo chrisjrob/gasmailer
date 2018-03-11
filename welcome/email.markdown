@@ -1,6 +1,6 @@
 Thank you for joining the Guildford Art Society.
 
-Please see attached stuff.
+Please see attached **stuff**.
 
 Kind regards
 

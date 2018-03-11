@@ -7,7 +7,6 @@
 
 use strict;
 use warnings;
-use emailfunc qw(:ALL);
 
 my $response    = zenity_menu();
 
@@ -20,18 +19,19 @@ exit;
 sub welcome {
     my $email_address = zenity_text("Enter email address");
 
-    my $html;
-    my $text;
+    use File::Slurp;
+    my $text = read_file('welcome/email.markdown');
 
-    my $email = {
-        From    => 'chrisjrob@gmail.com',
-        To      => $email_address,
-        Subject => 'Welcome to Guildford Art Society',
-        HTML    => $html,
-        Plain   => $text,
-    };
+    use Text::Markdown::Hoedown;
+    my $html = markdown($text);
 
-    my $response = post_html_email($email);
+    use Email::Stuffer;
+    Email::Stuffer  ->to($email_address)
+                    ->from('chrisjrob@gmail.com')
+                    ->subject('Welcome to Guildford Art Society')
+                    ->html_body($html)
+                    ->attach_file('welcome/attachments/test.pdf')
+                    ->send;
 
 }
 
