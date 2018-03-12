@@ -16,7 +16,7 @@ exit;
 sub do_send {
     my $type = shift;
 
-    return unless -d $type;
+    return unless ( (defined $type) and (-d $type) );
 
     my $config_ref      = load_yaml("$type/config.yml");
     my $email_address   = zenity_text("Enter email address");
@@ -61,16 +61,33 @@ sub zenity_text {
 }
 
 sub zenity_menu {
+    my ($types, %types) = list_types();
 
     # fixme: dynamically create options from directories and configs
-    my $response = `zenity  --list --title "GAS Mailer" --text "Select an option" --radiolist  --column "Pick" --column "Option" TRUE "Send email to new member"`;
-
+    my $response = `zenity  --list --width 400 --height 300 --title "GAS Mailer" --text "Select an option" --radiolist  --column "Pick" --column "Option" $types`;
     chomp($response);
 
-    if ($response eq 'Send email to new member') {
-        return 'welcome';
-    } else {
-        print "Unexpect: $response\n";
+    return $types{$response};
+}
+
+sub list_types {
+    my @dirs = glob("*");
+
+    my (%types, $types);
+    foreach my $dir (@dirs) {
+        if (-d $dir) {
+            my $name        = type_name($dir);
+            $types{ $name } = $dir;
+            $types .= "FALSE \"$name\" ";
+        }
     }
 
+    return ($types, %types);
 }
+
+sub type_name {
+    my $type        = shift;
+    my $config_ref  = load_yaml("$type/config.yml");
+    return $config_ref->{subject};
+}
+
