@@ -18,21 +18,22 @@ sub do_send {
 
     return unless ( (defined $type) and (-d $type) );
 
-    my $email_ref       = load_yaml("$type/email.markdown");
-    my $email_address   = zenity_text("Enter email address");
+    my $email_ref       = load_yaml("$type/email.yml");
+    my $member_ref      = zenity_form("Add new member");
 
     use Text::Markdown::Hoedown;
     my $html            = markdown($email_ref->{Body});
+    $html               =~ s/%%Dear%%/$member_ref->{Dear}/e;
+    $html               =~ s/%%Comment%%/$member_ref->{Comment}/e;
 
     use Email::Stuffer;
-    my $email = Email::Stuffer  ->to($email_address)
+    my $email = Email::Stuffer  ->to("$member_ref->{Name} <$member_ref->{Email}>")
                                 ->from($email_ref->{From})
                                 ->subject($email_ref->{Subject})
                                 ->html_body($html);
 
-    my @files = glob("$type/attachments/*");
-    foreach my $filename (@files) {
-        $email->attach_file($filename);
+    foreach my $filename (@{ $email_ref->{Attachments} }) {
+        $email->attach_file("$type/$filename");
     }
 
     $email->send;
@@ -47,6 +48,23 @@ sub load_yaml {
     my $yaml_ref  = Load($yaml);
 
     return $yaml_ref;
+}
+
+sub zenity_form {
+    my $prompt = shift;
+
+    my $response = `zenity --forms --title="GAS Mailer" --text="$prompt" --add-entry="Full name" --add-entry="Dear name" --add-entry="Email address" --add-entry="Comment"`;
+    chomp($response);
+
+    my ($name, $dear, $email, $comment) = split(/\|/, $response);
+    my %member = (
+        Name    => $name,
+        Dear    => $dear,
+        Email   => $email,
+        Comment => $comment,
+    );
+
+    return(\%member);
 }
 
 sub zenity_text {
@@ -85,7 +103,7 @@ sub list_types {
 
 sub type_name {
     my $type        = shift;
-    my $config_ref  = load_yaml("$type/email.markdown");
+    my $config_ref  = load_yaml("$type/email.yml");
     return $config_ref->{Subject};
 }
 
