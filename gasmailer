@@ -18,19 +18,16 @@ sub do_send {
 
     return unless ( (defined $type) and (-d $type) );
 
-    my $config_ref      = load_yaml("$type/config.yml");
+    my $email_ref       = load_yaml("$type/email.markdown");
     my $email_address   = zenity_text("Enter email address");
 
-    use File::Slurp;
-    my $text            = read_file("$type/email.markdown");
-
     use Text::Markdown::Hoedown;
-    my $html            = markdown($text);
+    my $html            = markdown($email_ref->{Body});
 
     use Email::Stuffer;
     my $email = Email::Stuffer  ->to($email_address)
-                                ->from($config_ref->{from})
-                                ->subject($config_ref->{subject})
+                                ->from($email_ref->{From})
+                                ->subject($email_ref->{Subject})
                                 ->html_body($html);
 
     my @files = glob("$type/attachments/*");
@@ -44,11 +41,12 @@ sub do_send {
 sub load_yaml {
     my $filename = shift;
 
+    use File::Slurp;
     use YAML;
-    my $config      = read_file($filename);
-    my $config_ref  = Load($config);
+    my $yaml      = read_file($filename, binmode => ':utf8');
+    my $yaml_ref  = Load($yaml);
 
-    return $config_ref;
+    return $yaml_ref;
 }
 
 sub zenity_text {
@@ -87,7 +85,7 @@ sub list_types {
 
 sub type_name {
     my $type        = shift;
-    my $config_ref  = load_yaml("$type/config.yml");
-    return $config_ref->{subject};
+    my $config_ref  = load_yaml("$type/email.markdown");
+    return $config_ref->{Subject};
 }
 
