@@ -28,6 +28,7 @@ sub do_send {
 
     use Email::Stuffer;
     my $email = Email::Stuffer  ->to("$member_ref->{Name} <$member_ref->{Email}>")
+                                ->cc($email_ref->{From})
                                 ->from($email_ref->{From})
                                 ->subject($email_ref->{Subject})
                                 ->html_body($html);
